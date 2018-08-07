@@ -1,20 +1,39 @@
 from itertools import groupby
 from copy import deepcopy
+import tkMessageBox
 
 import pieces
 import re
 
+
 class ChessError(Exception): pass
+
+
 class InvalidCoord(ChessError): pass
+
+
 class InvalidColor(ChessError): pass
+
+
 class InvalidMove(ChessError): pass
+
+
 class Check(ChessError): pass
+
+
 class CheckMate(ChessError): pass
+
+
 class Draw(ChessError): pass
+
+
 class NotYourTurn(ChessError): pass
 
-FEN_STARTING = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+# FEN_STARTING = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+FEN_STARTING = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1'
 RANK_REGEX = re.compile(r"^[A-Z][1-8]$")
+
 
 class Board(dict):
     '''
@@ -32,9 +51,9 @@ class Board(dict):
     '''
 
     axis_y = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
-    axis_x = tuple(range(1,9)) # (1,2,3,...8)
+    axis_x = tuple(range(1, 9))  # (1,2,3,...8)
 
-    captured_pieces = { 'white': [], 'black': [] }
+    captured_pieces = {'white': [], 'black': []}
     player_turn = None
     castling = '-'
     en_passant = '-'
@@ -42,9 +61,11 @@ class Board(dict):
     fullmove_number = 1
     history = []
 
-    def __init__(self, fen = None):
-        if fen is None: self.load(FEN_STARTING)
-        else: self.load(fen)
+    def __init__(self, fen=None):
+        if fen is None:
+            self.load(FEN_STARTING)
+        else:
+            self.load(fen)
 
     def __getitem__(self, coord):
         if isinstance(coord, str):
@@ -57,18 +78,19 @@ class Board(dict):
         except KeyError:
             return None
 
-    def save_to_file(self): pass
+    def save_to_file(self):
+        tkMessageBox.showinfo(title="Hello World", message="This is a message")
 
     def is_in_check_after_move(self, p1, p2):
         # Create a temporary board
         tmp = deepcopy(self)
-        tmp._do_move(p1,p2)
+        tmp._do_move(p1, p2)
         return tmp.is_in_check(self[p1].color)
 
     def move(self, p1, p2):
         p1, p2 = p1.upper(), p2.upper()
         piece = self[p1]
-        dest  = self[p2]
+        dest = self[p2]
 
         if self.player_turn != piece.color:
             raise NotYourTurn("Not " + piece.color + "'s turn!")
@@ -81,7 +103,7 @@ class Board(dict):
 
         # If enemy has any moves look for check
         if self.all_possible_moves(enemy):
-            if self.is_in_check_after_move(p1,p2):
+            if self.is_in_check_after_move(p1, p2):
                 raise Check
 
         if not possible_moves and self.is_in_check(piece.color):
@@ -90,18 +112,20 @@ class Board(dict):
             raise Draw
         else:
             self._do_move(p1, p2)
-            self._finish_move(piece, dest, p1,p2)
+            self._finish_move(piece, dest, p1, p2)
 
     def get_enemy(self, color):
-        if color == "white": return "black"
-        else: return "white"
+        if color == "white":
+            return "black"
+        else:
+            return "white"
 
     def _do_move(self, p1, p2):
         '''
             Move a piece without validation
         '''
         piece = self[p1]
-        dest  = self[p2]
+        dest = self[p2]
         del self[p1]
         self[p2] = piece
 
@@ -112,7 +136,7 @@ class Board(dict):
         enemy = self.get_enemy(piece.color)
         if piece.color == 'black':
             self.fullmove_number += 1
-        self.halfmove_clock +=1
+        self.halfmove_clock += 1
         self.player_turn = enemy
         abbr = piece.abbriviation
         if abbr == 'P':
@@ -122,7 +146,7 @@ class Board(dict):
             self.halfmove_clock = 0
         if dest is None:
             # No capturing
-            movetext = abbr +  p2.lower()
+            movetext = abbr + p2.lower()
         else:
             # Capturing
             movetext = abbr + 'x' + p2.lower()
@@ -131,13 +155,12 @@ class Board(dict):
 
         self.history.append(movetext)
 
-
     def all_possible_moves(self, color):
         '''
             Return a list of `color`'s possible moves.
             Does not check for check.
         '''
-        if(color not in ("black", "white")): raise InvalidColor
+        if (color not in ("black", "white")): raise InvalidColor
         result = []
         for coord in self.keys():
             if (self[coord] is not None) and self[coord].color == color:
@@ -150,7 +173,7 @@ class Board(dict):
             Return a list of coordinates occupied by `color`
         '''
         result = []
-        if(color not in ("black", "white")): raise InvalidColor
+        if color not in ("black", "white"): raise InvalidColor
 
         for coord in self:
             if self[coord].color == color:
@@ -160,23 +183,22 @@ class Board(dict):
     def is_king(self, piece):
         return isinstance(piece, pieces.King)
 
-
     def get_king_position(self, color):
         for pos in self.keys():
             if self.is_king(self[pos]) and self[pos].color == color:
                 return pos
 
     def get_king(self, color):
-        if(color not in ("black", "white")): raise InvalidColor
+        if (color not in ("black", "white")): raise InvalidColor
         return self[self.get_king_position(color)]
 
     def is_in_check(self, color):
-        if(color not in ("black", "white")): raise InvalidColor
+        if (color not in ("black", "white")): raise InvalidColor
         king = self.get_king(color)
         enemy = self.get_enemy(color)
         return king in map(self.__getitem__, self.all_possible_moves(enemy))
 
-    def letter_notation(self,coord):
+    def letter_notation(self, coord):
         if not self.is_in_bounds(coord): return
         try:
             return self.axis_y[coord[1]] + str(self.axis_x[coord[0]])
@@ -184,35 +206,40 @@ class Board(dict):
             raise InvalidCoord
 
     def number_notation(self, coord):
-        return int(coord[1])-1, self.axis_y.index(coord[0])
+        return int(coord[1]) - 1, self.axis_y.index(coord[0])
 
     def is_in_bounds(self, coord):
-        if coord[1] < 0 or coord[1] > 7 or\
-           coord[0] < 0 or coord[0] > 7:
+        if coord[1] < 0 or coord[1] > 7 or \
+                coord[0] < 0 or coord[0] > 7:
             return False
-        else: return True
+        else:
+            return True
 
     def load(self, fen):
-        '''
+        """
             Import state from FEN notation
-        '''
+        """
         self.clear()
         # Split data
         fen = fen.split(' ')
+
         # Expand blanks
-        def expand(match): return ' ' * int(match.group(0))
+        def expand(match):
+            return ' ' * int(match.group(0))
 
         fen[0] = re.compile(r'\d').sub(expand, fen[0])
 
         for x, row in enumerate(fen[0].split('/')):
             for y, letter in enumerate(row):
                 if letter == ' ': continue
-                coord = self.letter_notation((7-x,y))
+                coord = self.letter_notation((7 - x, y))
                 self[coord] = pieces.piece(letter)
                 self[coord].place(self)
 
-        if fen[1] == 'w': self.player_turn = 'white'
-        else: self.player_turn = 'black'
+        if fen[1] == 'w':
+            self.player_turn = 'white'
+        else:
+            self.player_turn = 'black'
 
         self.castling = fen[2]
         self.en_passant = fen[3]
@@ -223,30 +250,33 @@ class Board(dict):
         '''
             Export state to FEN notation
         '''
+
         def join(k, g):
-            if k == ' ': return str(len(g))
-            else: return "".join(g)
+            if k == ' ':
+                return str(len(g))
+            else:
+                return "".join(g)
 
         def replace_spaces(row):
             # replace spaces with their count
-            result = [join(k, list(g)) for k,g in groupby(row)]
+            result = [join(k, list(g)) for k, g in groupby(row)]
             return "".join(result)
-
 
         result = ''
         for number in self.axis_x[::-1]:
             for letter in self.axis_y:
-                piece = self[letter+str(number)]
+                piece = self[letter + str(number)]
                 if piece is not None:
                     result += piece.abbriviation
-                else: result += ' '
+                else:
+                    result += ' '
             result += '/'
 
-        result = result[:-1] # remove trailing "/"
+        result = result[:-1]  # remove trailing "/"
         result = replace_spaces(result)
         result += " " + (" ".join([self.player_turn[0],
-                         self.castling,
-                         self.en_passant,
-                         str(self.halfmove_clock),
-                         str(self.fullmove_number)]))
+                                   self.castling,
+                                   self.en_passant,
+                                   str(self.halfmove_clock),
+                                   str(self.fullmove_number)]))
         return result
