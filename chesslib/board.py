@@ -79,7 +79,7 @@ class Board(dict):
             return None
 
     def save_to_file(self):
-        tkMessageBox.showinfo(title="Hello World", message="This is a message")
+        tkMessageBox.showinfo(title="", message="State saved")
 
     def is_in_check_after_move(self, p1, p2):
         # Create a temporary board

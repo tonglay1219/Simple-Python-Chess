@@ -1,7 +1,9 @@
 import Tkinter as tk  # python 2
 import tkFont as tkfont  # python 2
 import gui_tkinter
+import os
 from board import Board
+from random import randint
 
 
 class FrameHelper(tk.Tk):
@@ -14,15 +16,15 @@ class FrameHelper(tk.Tk):
         # the container is where we'll stack a bunch of frames
         # on top of each other, then the one we want visible
         # will be raised above the others
-        container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        self.container = tk.Frame(self)
+        self.container.pack(side="top", fill="both", expand=True)
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
         for F in (WelcomeWindow, TraditionalMode, NewMode):
             page_name = F.__name__
-            frame = F(parent=container, controller=self)
+            frame = F(parent=self.container, controller=self)
             self.frames[page_name] = frame
 
             # put all of the pages in the same location;
@@ -34,10 +36,10 @@ class FrameHelper(tk.Tk):
 
     def show_frame(self, page_name):
         '''Show a frame for the given page name'''
-        frame = self.frames[page_name]
-        frame.tkraise()
-        if page_name == "TraditionalMode":
-            frame.show()
+        self.frame = self.frames[page_name]
+        self.frame.tkraise()
+        if page_name == "TraditionalMode" or page_name == "NewMode":
+            self.frame.show()
 
 
 class WelcomeWindow(tk.Frame):
@@ -46,15 +48,15 @@ class WelcomeWindow(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        label = tk.Label(self, text="Chess")
-        label.pack(side="top", fill="x", pady=10)
+        self.label = tk.Label(self, text="Chess")
+        self.label.pack(side="top", fill="x", pady=10)
 
-        button1 = tk.Button(self, text="Traditional Mode",
+        self.button1 = tk.Button(self, text="Traditional Mode", name="traditional_btn",
                             command=lambda: controller.show_frame("TraditionalMode"))
-        button2 = tk.Button(self, text="New Mode",
+        self.button2 = tk.Button(self, text="New Mode", name="new_mode_btn",
                             command=lambda: controller.show_frame("NewMode"))
-        button1.pack()
-        button2.pack()
+        self.button1.pack()
+        self.button2.pack()
 
 
 class TraditionalMode(tk.Frame):
@@ -76,7 +78,14 @@ class NewMode(tk.Frame):
         self.controller = controller
 
     def show(self):
-        pass
+        gui = gui_tkinter.BoardGuiTk(self.controller, Board(get_random_rule()))
+        gui.pack(side="top", fill="both", expand="true", padx=4, pady=4)
+        gui.draw_pieces()
+
+
+def get_random_rule():
+    rules = open(os.path.dirname(os.path.abspath(__file__)) + "/960rules.txt").readlines()
+    return rules[randint(0, len(rules))]
 
 
 if __name__ == "__main__":
